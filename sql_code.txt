@@ -1,0 +1,45 @@
+create database school
+use school
+create table userlogin (EmailID varchar(50) Primary Key, Name varchar(50),Password varchar(50),Type varchar(1));
+
+create table MovieTbl (MovieID integer primary key, MovieName varchar(50), StartDate varchar(10), EndDate varchar(10), Active varchar(1) default 'Y');
+
+create table MovieScheduleTbl (ScheduleID integer primary key, MovieID integer, Date varchar(10), Time varchar(8));
+
+create table MovieTransactionTbl (TranID integer Primary key, MovieID integer, ScheduleID integer, SeatID varchar(2), Status varchar(2) default 'NB', EmailID varchar(50));
+
+create table IdGenerationTbl (MovieID integer, ScheduleID integer, TranID integer);
+insert into IdGenerationTbl values(1,1,1);
+
+create table SeatTbl (SeatID varchar(2) primary key, price integer);
+insert into seattbl values('A1',500);
+insert into seattbl values('A2',500);
+insert into seattbl values('A3',500);
+insert into seattbl values('A4',500);
+insert into seattbl values('A5',500);
+insert into seattbl values('B1',500);
+insert into seattbl values('B2',500);
+insert into seattbl values('B3',500);
+insert into seattbl values('B4',500);
+insert into seattbl values('B5',500);
+insert into seattbl values('C1',1000);
+insert into seattbl values('C2',1000);
+insert into seattbl values('C3',1000);
+insert into seattbl values('C4',1000);
+insert into seattbl values('C5',1000);
+
+
++----+ +----+ +----+ +----+ +----+ 
+| A1 | | A2 | | A3 | | A4 | | A5 | 
+| B  | | B  | | B  | | B  | | B  | 
++----+ +----+ +----+ +----+ +----+ 
+
++----+ +----+ +----+ +----+ +----+ 
+| B1 | | B2 | | B3 | | B4 | | B5 | 
+| B  | | B  | | B  | | B  | | B  | 
++----+ +----+ +----+ +----+ +----+ 
+
++----+ +----+ +----+ +----+ +----+ 
+| C1 | | C2 | | C3 | | C4 | | C5 | 
+| B  | | B  | | B  | | B  | | B  | 
++----+ +----+ +----+ +----+ +----+ 
