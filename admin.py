@@ -1,88 +1,192 @@
-import mysql.connector as sqltor
-from datetime import *
-mycon = sqltor.connect(host = 'localhost', user = 'root',password = 'sql123',database = 'school')
-cursor = mycon.cursor(buffered = True)
-def insert_movie():
-    cursor.execute("select MovieID from IdGenerationTbl;")
-    temp = cursor.fetchall()
-    movieid = temp[0][0]
-    name = input("Enter Movie Name: ")
-    StDate = input("Enter Start Date(yyyy-mm-dd): ")
-    EnDate = input("Enter End Date(yyyy-mm-dd): ")
-    cursor.execute("insert into MovieTbl(MovieID,MovieName,StartDate,EndDate) values({},'{}','{}','{}');".format(movieid,name,StDate,EnDate))
-    cursor.execute("commit;")
-    cursor.execute("update IdGenerationTbl set MovieID = MovieID +1;")
-    cursor.execute("commit;")
-    print("Movie has been inserted...")
-def schedule_movies():
-    cursor.execute("select ScheduleID from IdGenerationTbl;")
-    temp = cursor.fetchall()
-    scheduleid = temp[0][0]
-    schDate = input("Pick a Date(yyyy-mm-dd): ")
-    schTime = input("Pick a time(hh:mm:ss): ")
-    cursor.execute("select MovieID, MovieName from MovieTbl where '{}' between StartDate and EndDate;".format(schDate))
-    if cursor.rowcount == 0:
-        print("No movies available...")
-    else:
-        temp = cursor.fetchall()
-        print("Movies available for showing: ",end = '')
-        for i in temp:
-            print(i[1]+'('+str(i[0])+')',end = ', ')
-        print()
-        movieid = int(input("Pick MovieId to Schedule: "))
-        cursor.execute("insert into MovieScheduleTbl values({},{},'{}','{}');".format(scheduleid,movieid,schDate,schTime))
-        cursor.execute("commit;")
-        cursor.execute("update IdGenerationTbl set ScheduleID = ScheduleID +1;")
-        cursor.execute("commit;")
-        for i in range(1,16):
-            if(i<6):
-                seatid = 'A'+str(i)
-            if(i>5 and i<11):
-                seatid = 'B'+str(i-5)
-            if(i>10):
-                seatid = 'C'+str(i-10)
-            cursor.execute("select TranID from IdGenerationTbl;")
-            temp = cursor.fetchall()
-            tranid = temp[0][0]
-            cursor.execute("insert into MovieTransactionTbl(TranID,MovieID,ScheduleID,SeatID) values({},{},{},'{}');".format(tranid,movieid,scheduleid,seatid))
-            cursor.execute("commit;")
-            cursor.execute("update IdGenerationTbl set TranID = TranID +1;")
-            cursor.execute("commit;")
-        print("Movie has been scheduled...")
-def view_bookings():
-    vdate = input("Pick a date(yyyy-mm-dd): ")
-    cursor.execute("select * from moviescheduletbl where Date like '{}';".format(vdate))
-    temp = cursor.fetchall()
-    if cursor.rowcount != 0:
-        schid = temp[0][0]
-        movieid = temp[0][1]
-        cursor.execute("select TranID, SeatID, EmailID from MovieTransactionTbl where MovieID = {} and ScheduleID = {} and Status like 'B';".format(movieid,schid))
-        temp2 = cursor.fetchall()
-        if cursor.rowcount == 0:
-            print("No Bookings Yet...")
-        else:
-            print("Tickets Booked For The Movie: ")
-            for i in temp2:
-                print("Ticket Number: {}, SeatID: {}, EmailID: {}".format(i[0],i[1],i[2]))
-    else:
-        print("No movies scheduled that day...")
+import streamlit as st
+import requests
+from streamlit_lottie import st_lottie
 
-def alter_prices():
-    cursor.execute("select Price from seattbl where SeatID like 'A1';")
-    temp = cursor.fetchall()
-    std = temp[0][0]
-    cursor.execute("select Price from seattbl where SeatID like 'C1';")
-    temp2 = cursor.fetchall()
-    g = temp2[0][0]
-    print("""The original prices are:
-1)Standard seat: {}
-2)Gold class seat: {}""".format(std,g))
-    nstd = int(input("Enter new price for standard seats: "))
-    ng = int(input("Enter new price for gold class seat: "))
-    cursor.execute("update SeatTbl set price = {} where SeatID like 'A_' or SeatID like 'B_';".format(nstd))
-    cursor.execute("commit;")
-    cursor.execute("update SeatTbl set price = {} where SeatID like 'C_';".format(ng))
-    cursor.execute("commit;")
-    print("Prices have been updated...")
+import pandas as pd
+import sqlalchemy
+
+
+import pickle
+from pathlib import Path
+
+import mysql.connector as sqltor
+mycon = sqltor.connect(host = 'localhost', user = 'root',password = 'pass123',database = 'school')
+cursor = mycon.cursor(buffered = True)
+
+
+
+st.header("Admin page")
+password_admin = st.text_input("Enter password ")
+enter = st.button("Enter")
+
+special_pass="movie*admin*123"
+
+if "enter_state" not in st.session_state:
+    st.session_state.enter_state = False
+
+def updation_rec():
+    cursor.execute('select * from moviescheduletbl')
+    schedule = cursor.fetchall()
+    seats1 =['A1','A2','A3','A4','A5','B1','B2','B3','B4','B5','C1','C2','C3','C4','C5']
+    cursor.execute('select scheduleid from movietransactiontbl')
+    data2=cursor.fetchall()
+    cursor.execute('select tranid from movietransactiontbl')
+    data3=cursor.fetchall()
+    max_tranid = data3[len(data3)-1]
+    for i in schedule:
+        if i[0] not in data2:
+            movie = i[1]
+            for j in seats1:
+                s="insert into movietransactiontbl values('{}','{}','{}','{}','{}','{}')".format(max_tranid+1,movie,i[0],j,'NB','NULL')
+                max_tranid+=1
+                cursor.execute(s)
+                mycon.commit()
+
+updation_rec()
+
+if enter or st.session_state.enter_state:
+    st.session_state.enter_state = True
+    if password_admin == special_pass:
+        st.success('Welcome')
+        engine = sqlalchemy.create_engine("mysql+pymysql://root:pass123@localhost/school")
+        with st.container():
+            st.header("User Login table")
+            df = pd.read_sql_table("userlogin",engine)
+            df
+
+        with st.container():
+            st.header("Id generation table")
+            df = pd.read_sql_table("idgenerationtbl",engine)
+            df
+
+        with st.container():
+            st.header("Movie table")
+            df = pd.read_sql_table("movietbl",engine)
+            df
+
+        with st.container():
+            st.header("Movie transaction table")
+            df = pd.read_sql_table("movietransactiontbl",engine)
+            df
+
+        with st.container():
+            st.header("Schedule table")
+            df = pd.read_sql_table("moviescheduletbl",engine)
+            df
+
+        with st.container():
+            st.header("Seat table")
+            df = pd.read_sql_table("seattbl",engine)
+            df
+
+        
+        with st.container():
+            cursor.execute("show tables")
+            tables_tuple= cursor.fetchall()
+            st.header("Adding records")
+            changes = st.selectbox("Select table",tables_tuple)   #for creating drop down
+            changes_button= st.button("Edit")
+            if "changes_button_state" not in st.session_state:
+                st.session_state.changes_button_state = False
+
+            if changes_button or st.session_state.changes_button_state:
+                st.session_state.changes_button_state = True
+
+
+                if changes[0] == 'idgenerationtbl':
+                    m_id = st.text_input("Enter the movie id ")
+                    s_id=st.text_input("Enter the scheduled id ")
+                    t_id=st.text_input("Enter the transaction id")
+                    idgen_button= st.button("edit")
+                    if "idgen_button_state" not in st.session_state:
+                        st.session_state.idgen_button_state = False
+
+                    if idgen_button or st.session_state.idgen_button_state:
+                        cursor.execute("insert into idgenerationtbl values('{}','{}','{}')".format(m_id,s_id,t_id))
+                        cursor.execute("commit;")
+                        st.success("Record has been added!")
+                        st.balloons()
+
+                elif changes[0] == 'movietbl':
+                    m_id = st.text_input("Enter the movie id ")
+                    mname_id=st.text_input("Enter the name of the movie ")
+                    start_id=st.text_input("Enter the start date")
+                    end_id=st.text_input("Enter the end date")
+                    a_id=st.text_input("Enter active status(Y/N) of the movie")
+                    movietb_button= st.button("edit")
+                    if "movietb_button_state" not in st.session_state:
+                        st.session_state.movietb_button_state = False
+
+                    if movietb_button or st.session_state.movietb_button_state:
+                        cursor.execute("insert into movietbl values('{}','{}','{}','{}','{}')".format(m_id,mname_id,start_id,end_id,a_id))
+                        cursor.execute("commit;")
+                        st.success("Record has been added!")
+                        st.balloons()
+
+                elif changes[0] == 'movietransactiontbl':
+                    t_id=st.text_input("Enter transaction id ")
+                    m_id = st.text_input("Enter the movie id ")
+                    s_id=st.text_input("Enter the schedule id ")
+                    seat_id=st.text_input("Enter the seat id")
+                    status_id=st.text_input("Enter the status")
+                    email_id=st.text_input("Enter email")
+                    transac= st.button("edit")
+                    if "transac_state" not in st.session_state:
+                        st.session_state.transac_state = False
+
+                    if transac or st.session_state.transac_state:
+                        cursor.execute("insert into movietransactiontbl values('{}','{}','{}','{}','{}','{}')".format(t_id,m_id,s_id,seat_id,status_id,email_id))
+                        cursor.execute("commit;")
+                        st.success("Record has been added!")
+                        st.balloons()
+
+                    updation_rec()
+
+
+                elif changes[0] == 'moviescheduletbl':
+                    s_id=st.text_input("Enter the schedule id ")
+                    movie_id=st.text_input("Enter the movie id")
+                    date_id=st.text_input("Enter the date")
+                    time_id=st.text_input("Enter time")
+                    sched= st.button("edit")
+                    if "sched_state" not in st.session_state:
+                        st.session_state.sched_state = False
+
+                    if sched or st.session_state.sched_state:
+                        cursor.execute("insert into moviescheduletbl values('{}','{}','{}','{}','{}')".format(s_id,movie_id,date_id,time_id))
+                        cursor.execute("commit;")
+                        st.success("Record has been added!")
+                        st.balloons()
+
+                elif changes[0] == 'seattbl':
+                    s_id=st.text_input("Enter the schedule id ")
+                    price_id=st.text_input("Enter the price")
+                    seat123= st.button("edit")
+                    if "seat123_state" not in st.session_state:
+                        st.session_state.seat123_state = False
+
+                    if seat123 or st.session_state.seat123_state:
+                        cursor.execute("insert into seattbl values('{}','{}')".format(s_id,price_id))
+                        cursor.execute("commit;")
+                        st.success("Record has been added!")
+                        st.balloons()
+
+                elif changes[0] == 'userlogin':
+                    email_id=st.text_input("Enter email id")
+                    name=st.text_input("Enter the name ")
+                    pass_special=st.text_input("Enter the password ")
+                    type_id=st.text_input("Enter the type")
+                    sched= st.button("edit")
+                    if "sched_state" not in st.session_state:
+                        st.session_state.sched_state = False
+
+                    if sched or st.session_state.sched_state:
+                        cursor.execute("insert into userlogin values('{}','{}','{}','{}')".format(email_id,name,pass_special,type_id))
+                        cursor.execute("commit;")
+                        st.success("Record has been added!")
+                        st.balloons()
+                
+                        
+
 
 

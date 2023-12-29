@@ -1,0 +1,37 @@
+pip install streamlit
+pip install PyMySQL
+pip install sqlalchemy
+pip install lottie
+pip install requests
+
+dont forget to change password for sql connectivity
+
+insert into moviescheduletbl values(1,101,'15-11-2022','16:30');
+insert into moviescheduletbl values(2,101,'16-11-2022','9:00');
+insert into moviescheduletbl values(3,101,'16-11-2022','17:00');
+
+insert into movietbl(101,'Black Panther','10-11-2022','29-11-2022' Y);
+
+insert into movietransactiontbl values(1,101,1,'A1','NB',NULL);
+insert into movietransactiontbl values(2,101,1,'A2','NB',NULL);
+insert into movietransactiontbl values(3,101,1,'A3','NB',NULL);
+insert into movietransactiontbl values(4,101,1,'A4','NB',NULL);
+insert into movietransactiontbl values(5,101,1,'A5','NB',NULL);
+insert into movietransactiontbl values(6,101,1,'B1','NB',NULL);
+insert into movietransactiontbl values(7,101,1,'B2','NB',NULL);
+insert into movietransactiontbl values(8,101,1,'B3','NB',NULL);
+insert into movietransactiontbl values(9,101,1,'B4','NB',NULL);
+insert into movietransactiontbl values(10,101,1,'B5','NB',NULL);
+insert into movietransactiontbl values(11,101,1,'B6','NB',NULL);
+insert into movietransactiontbl values(12,101,1,'B7','NB',NULL);
+insert into movietransactiontbl values(13,101,1,'B8','NB',NULL);
+insert into movietransactiontbl values(14,101,1,'B9','NB',NULL);
+
+insert into idgenerationtbl values(1,1,1);
+
+
+
+after this>>
+streamlit run signup.py
+
+admin password is line 22 of admin part
